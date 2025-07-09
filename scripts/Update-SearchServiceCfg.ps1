@@ -179,8 +179,15 @@ switch ($MessageLevel) {
     }
 }
 
-# Ensure Az modules are imported
-Import-Module Az.Search -ErrorAction Stop
+# Ensure Az.Accounts and Az.Search modules are available and imported
+$modulesToCheck = @("Az.Accounts", "Az.Search")
+foreach ($mod in $modulesToCheck) {
+    if (-not (Get-Module -ListAvailable -Name $mod)) {
+        Write-Host "Module '$mod' not found. Installing from PSGallery..."
+        Install-Module -Name $mod -Force -Scope CurrentUser -AllowClobber
+    }
+    Import-Module $mod -ErrorAction Stop
+}
 
 function Get-SearchServiceAdminKey {
     param(
