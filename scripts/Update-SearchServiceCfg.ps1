@@ -180,13 +180,23 @@ switch ($MessageLevel) {
 }
 
 # Ensure Az.Accounts and Az.Search modules are available and imported
-$modulesToCheck = @("Az.Accounts", "Az.Search")
-foreach ($mod in $modulesToCheck) {
-    if (-not (Get-Module -ListAvailable -Name $mod)) {
-        Write-Host "Module '$mod' not found. Installing from PSGallery..."
-        Install-Module -Name $mod -Force -Scope CurrentUser -AllowClobber
+#   Code borrowed from Scott Metzel <https://github.com/ScottMetzel>
+#     and modified from the original.
+[System.Collections.ArrayList] $aryModulesToImport = @(
+    'Az.Accounts',
+    'Az.Search'
+)
+Write-Verbose 'Import required PowerShell modules.'
+[System.Int32] $intModulesToImportCount = $aryModulesToImport.Count
+[System.Int32] $intModuleIndex = 1
+foreach ($strModule in $aryModulesToImport) {
+    Write-Verbose -Message "Importing module: '$strModule'. Module: '$intModuleIndex' of: '$intModulesToImportCount' modules."
+    if (-not (Get-Module -ListAvailable -Name $strModule)) {
+        Write-Verbose "Module '$strModuled' not found. Installing from PSGallery..."
+        Install-Module -Name $strModule -Force -Scope CurrentUser -AllowClobber| Out-Null
     }
-    Import-Module $mod -ErrorAction Stop
+    Import-Module -Name $strModule -Verbose:$false | Out-Null
+    $intModuleIndex++
 }
 
 function Get-SearchServiceAdminKey {
@@ -498,7 +508,10 @@ function Update-Indexer {
                 parsingMode = "json"
             }
         }
-        schedule = $null
+        schedule = @{
+            interval = "P1D"
+            startTime = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        }
         skillsetName = $null
         targetIndexName = $IndexName
     }
